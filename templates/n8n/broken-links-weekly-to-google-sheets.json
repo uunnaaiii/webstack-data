@@ -1,0 +1,185 @@
+{
+  "name": "Weekly broken-link report to Google Sheets (Apify Broken Link Checker)",
+  "nodes": [
+    {
+      "id": "4a78e42c-a894-43b1-ad36-d72820db470c",
+      "name": "Read me",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        -220
+      ],
+      "parameters": {
+        "width": 420,
+        "height": 300,
+        "content": "## Weekly broken-link report\nEvery Monday this workflow crawls your website with the **Broken Link Checker** Actor on Apify and appends every broken link to a Google Sheet.\n\n**Setup (5 min)**\n1. In **Run Broken Link Checker**, create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Change `startUrls` in the request body to your site(s).\n3. In **Append to Google Sheets**, pick your spreadsheet and sheet (first row: site, brokenUrl, statusCode, error, isExternal, foundOnPage, anchorText, checkedAt).\n\nCost: $0.01 per run + $1.50 per 1,000 pages crawled. https://apify.com/uianalize/broken-link-checker"
+      }
+    },
+    {
+      "id": "cac13430-0be0-42de-8ee2-9eabae971fb7",
+      "name": "Every Monday 8:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        160
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d37a31dd-e674-40f0-9fc8-cf6ff4af51d9",
+      "name": "Run Broken Link Checker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/uianalize~broken-link-checker/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "maxTotalChargeUsd",
+              "value": "2"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"startUrls\": [\"example.com\"],\n  \"maxPagesPerSite\": 100,\n  \"checkExternalLinks\": true\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Apify API token"
+        }
+      }
+    },
+    {
+      "id": "82a58ee5-53d4-442e-94b0-18cd67720c87",
+      "name": "Only broken links",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c54025e9-35df-4154-b5ed-075ff3c2cfb3",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "broken-link",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "420bf4b4-0c07-4e3d-80cd-9b706c041ac6",
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        660,
+        160
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday 8:00": {
+      "main": [
+        [
+          {
+            "node": "Run Broken Link Checker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Broken Link Checker": {
+      "main": [
+        [
+          {
+            "node": "Only broken links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only broken links": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
