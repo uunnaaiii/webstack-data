@@ -9,6 +9,7 @@ Our Actors run in the cloud, scale from one website to thousands, export to CSV/
 | Actor | What it does | Price |
 |---|---|---|
 | [Broken Link Checker](https://apify.com/uianalize/broken-link-checker) | Crawls a website and lists every broken link (404, 5xx, timeouts, DNS/SSL errors) with the page where it appears and its anchor text. | $0.01 per run + $1.50 per 1,000 pages crawled |
+| [SEO Audit Crawler](https://apify.com/uianalize/seo-audit-crawler) | Audits every page of a website for on-page SEO: titles, meta descriptions, H1, canonical, noindex, alt text, thin content, Open Graph, structured data and duplicates, with a site score out of 100. | $1.50 per 1,000 pages audited |
 | [Tech Stack Detector](https://apify.com/uianalize/tech-stack-detector) | Detects the CMS, e-commerce platform, analytics, ad pixels, chat, payments, CDN and hosting of any list of websites. | $0.01 per run + $1.50 per 1,000 sites analysed |
 
 ## Templates
