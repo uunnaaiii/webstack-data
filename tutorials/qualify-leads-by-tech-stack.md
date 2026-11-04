@@ -45,7 +45,7 @@ Export the dataset to Excel or CSV and filter there, or call the API from your C
 
 ## What does it cost?
 
-$0.01 per run plus $1.50 per 1,000 sites analysed. 1,000 leads cost about $1.51, and failed sites are free.
+$1.50 per 1,000 sites analysed plus a near-zero start fee. 1,000 leads cost about $1.50, and failed sites are free.
 
 ## Good to know
 

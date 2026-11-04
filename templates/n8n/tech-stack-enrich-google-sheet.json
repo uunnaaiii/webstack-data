@@ -13,7 +13,7 @@
       "parameters": {
         "width": 440,
         "height": 320,
-        "content": "## Enrich a sheet of domains with their tech stack\nReads a Google Sheet with a `domain` column, detects each site's technologies with the **Tech Stack Detector** Actor on Apify and writes them back (CMS, e-commerce, analytics, advertising, all technologies).\n\n**Setup (5 min)**\n1. Sheet columns: domain, cms, ecommerce, analytics, advertising, technologies.\n2. Pick the sheet in **Read domains** and **Update sheet**.\n3. In **Detect tech stack**, create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n\nCost: $0.01 per run + $1.50 per 1,000 sites (failed sites free). https://apify.com/uianalize/tech-stack-detector"
+        "content": "## Enrich a sheet of domains with their tech stack\nReads a Google Sheet with a `domain` column, detects each site's technologies with the **Tech Stack Detector** Actor on Apify and writes them back (CMS, e-commerce, analytics, advertising, all technologies).\n\n**Setup (5 min)**\n1. Sheet columns: domain, cms, ecommerce, analytics, advertising, technologies.\n2. Pick the sheet in **Read domains** and **Update sheet**.\n3. In **Detect tech stack**, create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n\nCost: $1.50 per 1,000 sites (failed sites free). https://apify.com/uianalize/tech-stack-detector"
       }
     },
     {

@@ -13,7 +13,7 @@
       "parameters": {
         "width": 420,
         "height": 300,
-        "content": "## Weekly broken-link report\nEvery Monday this workflow crawls your website with the **Broken Link Checker** Actor on Apify and appends every broken link to a Google Sheet.\n\n**Setup (5 min)**\n1. In **Run Broken Link Checker**, create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Change `startUrls` in the request body to your site(s).\n3. In **Append to Google Sheets**, pick your spreadsheet and sheet (first row: site, brokenUrl, statusCode, error, isExternal, foundOnPage, anchorText, checkedAt).\n\nCost: $0.01 per run + $1.50 per 1,000 pages crawled. https://apify.com/uianalize/broken-link-checker"
+        "content": "## Weekly broken-link report\nEvery Monday this workflow crawls your website with the **Broken Link Checker** Actor on Apify and appends every broken link to a Google Sheet.\n\n**Setup (5 min)**\n1. In **Run Broken Link Checker**, create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Change `startUrls` in the request body to your site(s).\n3. In **Append to Google Sheets**, pick your spreadsheet and sheet (first row: site, brokenUrl, statusCode, error, isExternal, foundOnPage, anchorText, checkedAt).\n\nCost: $1.50 per 1,000 pages crawled (near-zero start fee). https://apify.com/uianalize/broken-link-checker"
       }
     },
     {

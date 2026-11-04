@@ -1,0 +1,278 @@
+{
+  "name": "Monthly SEO audit to Google Sheets (Apify SEO Audit Crawler)",
+  "nodes": [
+    {
+      "id": "9be882f8-8936-443a-82ab-7291097b5ebf",
+      "name": "Read me",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        -240
+      ],
+      "parameters": {
+        "width": 440,
+        "height": 320,
+        "content": "## Monthly SEO audit to Google Sheets\nOn the 1st of every month this workflow audits your website with the **SEO Audit Crawler** Actor on Apify and writes one row per page with issues to a Google Sheet, so you see what to fix and whether the site improves.\n\n**Setup (5 min)**\n1. In **Run SEO Audit Crawler**, create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Change `startUrls` in the request body to your site.\n3. In **Append to Google Sheets**, pick your sheet (first row: checkedAt, url, statusCode, issueCount, issues, title, titleLength, metaDescriptionLength, h1Count, wordCount, imagesWithoutAlt).\n\nCost: $1.50 per 1,000 pages audited. https://apify.com/uianalize/seo-audit-crawler"
+      }
+    },
+    {
+      "id": "69cefc31-653e-45bb-85de-1634f5e614a0",
+      "name": "1st of every month",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        160
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "monthsInterval": 1,
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "85901a5f-46da-41d7-9864-3c329d585fe5",
+      "name": "Run SEO Audit Crawler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/uianalize~seo-audit-crawler/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "maxTotalChargeUsd",
+              "value": "2"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"startUrls\": [\"example.com\"],\n  \"maxPagesPerSite\": 200,\n  \"onlyPagesWithIssues\": true\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Apify API token"
+        }
+      }
+    },
+    {
+      "id": "a5b415ed-a8d2-45df-913a-5febf5ebd752",
+      "name": "Only page rows",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e9183cfb-445b-4e5b-b78e-5e3db77be0ea",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "page",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "6c1dc47c-0ab9-40ae-a36e-11ad746fe9ca",
+      "name": "Format row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        160
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f3806a3-e8fd-4dd7-b67c-fdcd5b3fb6e4",
+              "name": "checkedAt",
+              "value": "={{ $json.checkedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "7bb82333-5d29-48b2-9077-160579592369",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "08b585d1-a482-4638-98bf-62f69b2809ae",
+              "name": "statusCode",
+              "value": "={{ $json.statusCode }}",
+              "type": "string"
+            },
+            {
+              "id": "bd9eb019-1a6f-4e77-a480-4a8f60b95a44",
+              "name": "issueCount",
+              "value": "={{ $json.issueCount }}",
+              "type": "string"
+            },
+            {
+              "id": "6f5b1754-69bc-4124-a7d2-e129b8ca70bc",
+              "name": "issues",
+              "value": "={{ ($json.issues || []).join(', ') }}",
+              "type": "string"
+            },
+            {
+              "id": "17c1a68a-9fe0-42f3-a492-ab8b4c194b96",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "29d0b4e8-def5-41d3-a633-e7d18ee11c87",
+              "name": "titleLength",
+              "value": "={{ $json.titleLength }}",
+              "type": "string"
+            },
+            {
+              "id": "5bcce677-8d54-4e09-aab4-706add653bc9",
+              "name": "metaDescriptionLength",
+              "value": "={{ $json.metaDescriptionLength }}",
+              "type": "string"
+            },
+            {
+              "id": "78bafdd4-d4e3-4748-867d-d372c0869757",
+              "name": "h1Count",
+              "value": "={{ $json.h1Count }}",
+              "type": "string"
+            },
+            {
+              "id": "ad783108-3f1e-49bb-82ed-c3987ce18916",
+              "name": "wordCount",
+              "value": "={{ $json.wordCount }}",
+              "type": "string"
+            },
+            {
+              "id": "685a82dc-2770-4973-81b3-7bbc98dbbe3a",
+              "name": "imagesWithoutAlt",
+              "value": "={{ $json.imagesWithoutAlt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "1d5a15f9-4501-41fa-a77b-c7cca07ab093",
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        160
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "1st of every month": {
+      "main": [
+        [
+          {
+            "node": "Run SEO Audit Crawler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run SEO Audit Crawler": {
+      "main": [
+        [
+          {
+            "node": "Only page rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only page rows": {
+      "main": [
+        [
+          {
+            "node": "Format row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format row": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

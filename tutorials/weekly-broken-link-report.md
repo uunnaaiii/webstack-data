@@ -37,7 +37,7 @@ Every Monday at 8:00 you get a fresh list of broken links in the sheet, with the
 
 ## What does it cost?
 
-The Actor charges $0.01 per run plus $1.50 per 1,000 pages crawled. Checking the links found on those pages is included. A weekly check of a 100-page site is about $0.16, or roughly $0.70 a month. The template caps every run at $2 with `maxTotalChargeUsd`.
+The Actor charges $1.50 per 1,000 pages crawled plus a near-zero start fee ($0.00005). Checking the links found on those pages is included. A weekly check of a 100-page site is about $0.15, or roughly $0.65 a month. The template caps every run at $2 with `maxTotalChargeUsd`.
 
 ## Tips
 
