@@ -1,0 +1,266 @@
+{
+  "name": "Enrich a Google Sheet of domains with their email provider, SPF and DMARC (Apify Email Provider Checker)",
+  "nodes": [
+    {
+      "id": "0aca644b-2978-4663-9e9a-37b10ee670e3",
+      "name": "Read me",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        -240
+      ],
+      "parameters": {
+        "width": 440,
+        "height": 320,
+        "content": "## Enrich a sheet of domains with their email provider\nReads a Google Sheet with a `domain` column (plain domains, e.g. acme.com), checks each one with the **Email Provider Checker** Actor on Apify and writes back the email provider (Google Workspace, Microsoft 365, Zoho...), security gateway, SPF senders, DMARC policy and a 0-100 email security score.\n\n**Setup (5 min)**\n1. Sheet columns: domain, email_provider, security_gateway, spf_senders, dmarc_policy, security_score, issues.\n2. Pick the sheet in **Read domains** and **Update sheet**.\n3. In **Check email provider**, create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n\nCost: $1.50 per 1,000 domains. Uses public DNS only. https://apify.com/uianalize/email-domain-checker"
+      }
+    },
+    {
+      "id": "501605a2-67f1-4a2f-b352-0845fa2d415c",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "23da2d3d-0cd6-467f-8843-51847c030221",
+      "name": "Read domains",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        200,
+        160
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e233d4ac-d0a9-47dd-82d0-1ccec938b0d2",
+      "name": "Collect domains",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        400,
+        160
+      ],
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "domain"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "db8e784f-b273-437b-8401-32ba2a83d295",
+      "name": "Check email provider",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/uianalize~email-domain-checker/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "maxTotalChargeUsd",
+              "value": "2"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ domains: $json.domain }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Apify API token"
+        }
+      }
+    },
+    {
+      "id": "83e1b6cb-2224-4755-897d-0c440f1d750e",
+      "name": "Format columns",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        800,
+        160
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "61846b18-2fb7-45dc-8059-e46a42324704",
+              "name": "domain",
+              "value": "={{ $json.domain }}",
+              "type": "string"
+            },
+            {
+              "id": "0fe7c34a-8bd5-4933-baa5-fd41c0081556",
+              "name": "email_provider",
+              "value": "={{ $json.emailProvider || $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "799ee9c1-0ee4-4b90-8e2b-2636afcb3310",
+              "name": "security_gateway",
+              "value": "={{ $json.securityGateway || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "4beae727-9e07-4f8e-8797-3dc934c32d1b",
+              "name": "spf_senders",
+              "value": "={{ ($json.spf?.senders || []).join(', ') }}",
+              "type": "string"
+            },
+            {
+              "id": "6d713f41-3d01-452f-9002-3fd38ee90ba9",
+              "name": "dmarc_policy",
+              "value": "={{ $json.dmarc?.policy || 'missing' }}",
+              "type": "string"
+            },
+            {
+              "id": "cc4584d1-ffd3-45f5-9599-e707aaf20bb4",
+              "name": "security_score",
+              "value": "={{ $json.securityScore ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "146db522-2ea8-4ac6-b07d-58c5cde0fec5",
+              "name": "issues",
+              "value": "={{ ($json.issues || []).join(', ') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3e94172d-cad0-419b-8e9c-b0f6f63175ec",
+      "name": "Update sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1000,
+        160
+      ],
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "domain"
+          ],
+          "schema": []
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Run manually": {
+      "main": [
+        [
+          {
+            "node": "Read domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read domains": {
+      "main": [
+        [
+          {
+            "node": "Collect domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect domains": {
+      "main": [
+        [
+          {
+            "node": "Check email provider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format columns": {
+      "main": [
+        [
+          {
+            "node": "Update sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check email provider": {
+      "main": [
+        [
+          {
+            "node": "Format columns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

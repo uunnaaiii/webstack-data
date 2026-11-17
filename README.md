@@ -11,6 +11,7 @@ Our Actors run in the cloud, scale from one website to thousands, export to CSV/
 | [Broken Link Checker](https://apify.com/uianalize/broken-link-checker) | Crawls a website and lists every broken link (404, 5xx, timeouts, DNS/SSL errors) with the page where it appears and its anchor text. | $1.50 per 1,000 pages crawled |
 | [SEO Audit Crawler](https://apify.com/uianalize/seo-audit-crawler) | Audits every page of a website for on-page SEO: titles, meta descriptions, H1, canonical, noindex, alt text, thin content, Open Graph, structured data and duplicates, with a site score out of 100. | $1.50 per 1,000 pages audited |
 | [Domain Availability Checker](https://apify.com/uianalize/domain-availability-checker) | Checks domains in bulk (or name ideas × extensions) against the official RDAP/WHOIS registries: available or registered, registrar, creation and expiry dates, nameservers. | $1.50 per 1,000 domains checked |
+| [Email Provider Checker](https://apify.com/uianalize/email-domain-checker) | Finds which email provider a domain uses (Google Workspace, Microsoft 365, Zoho...), its security gateway, SPF senders, DMARC policy, DKIM and a 0-100 email security score. Accepts domains, URLs or email addresses. | $1.50 per 1,000 domains |
 | [Sitemap URL Extractor](https://apify.com/uianalize/sitemap-url-extractor) | Gets every URL of a website from its sitemaps (robots.txt, indexes, .gz) with lastmod, hreflang and images. Optional HTTP status check and "modified since" filter to watch new pages. | $0.30 per 1,000 URLs ($0.60 with status check) |
 | [Tech Stack Detector](https://apify.com/uianalize/tech-stack-detector) | Detects the CMS, e-commerce platform, analytics, ad pixels, chat, payments, CDN and hosting of any list of websites. | $1.50 per 1,000 sites analysed |
 
@@ -21,6 +22,7 @@ Our Actors run in the cloud, scale from one website to thousands, export to CSV/
 - [n8n: monthly SEO audit of your site to Google Sheets](templates/n8n/seo-audit-monthly-to-google-sheets.json)
 - [n8n: weekly email before your domains expire](templates/n8n/domain-expiry-watch-email.json)
 - [n8n: weekly alert of new pages on a competitor's site](templates/n8n/competitor-new-pages-weekly-email.json)
+- [n8n: enrich a Google Sheet of domains with their email provider, SPF and DMARC](templates/n8n/email-provider-enrich-google-sheet.json)
 
 ## Tutorials
 
@@ -29,6 +31,7 @@ Our Actors run in the cloud, scale from one website to thousands, export to CSV/
 - [Run a full on-page SEO audit of a website in 5 minutes](tutorials/on-page-seo-audit.md)
 - [Check 100 domain name ideas in one minute](tutorials/check-domain-names-in-bulk.md)
 - [Find broken and redirected URLs in your sitemap](tutorials/sitemap-health-check.md)
+- [Find which companies use Google Workspace or Microsoft 365](tutorials/email-provider-lookup.md)
 
 ## Call the Actors from code
 
