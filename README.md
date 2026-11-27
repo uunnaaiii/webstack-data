@@ -17,8 +17,9 @@ Our Actors run in the cloud, scale from one website to thousands, export to CSV/
 
 ## Templates
 
-- [n8n: weekly broken-link report to Google Sheets](templates/n8n/broken-links-weekly-to-google-sheets.json)
+- [n8n: weekly broken-link report to Google Sheets with email alert](templates/n8n/broken-links-weekly-to-google-sheets.json)
 - [n8n: enrich a Google Sheet of domains with their tech stack](templates/n8n/tech-stack-enrich-google-sheet.json)
+- [n8n: qualify new leads by tech stack and email the matches](templates/n8n/tech-stack-qualify-leads.json)
 - [n8n: monthly SEO audit of your site to Google Sheets](templates/n8n/seo-audit-monthly-to-google-sheets.json)
 - [n8n: weekly email before your domains expire](templates/n8n/domain-expiry-watch-email.json)
 - [n8n: weekly alert of new pages on a competitor's site](templates/n8n/competitor-new-pages-weekly-email.json)

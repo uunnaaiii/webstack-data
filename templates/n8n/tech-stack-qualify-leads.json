@@ -1,0 +1,444 @@
+{
+  "name": "Qualify new Google Sheets leads by website tech stack with email alert (Apify)",
+  "nodes": [
+    {
+      "id": "da38ed0b-f5fd-46ce-b771-807576a140b4",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        -300
+      ],
+      "parameters": {
+        "width": 460,
+        "height": 760,
+        "content": "## Qualify new leads by their website's tech stack\n\n**Who it's for:** agencies, SaaS and freelancers who sell to companies on a specific platform (Shopify, WordPress, HubSpot, Stripe...) and keep leads in Google Sheets.\n\n**How it works**\n1. Every weekday at 9:00 the workflow reads your lead sheet and keeps only rows that have not been checked yet.\n2. It sends up to 200 domains in one call to the Tech Stack Detector Actor on Apify, which detects CMS, e-commerce, analytics, ad pixels, chat, payments and hosting.\n3. A Code node compares each site with your target technologies and marks it as a fit or not.\n4. The sheet row is updated with the stack, the matched technologies, a fit flag and the check date.\n5. New fits are gathered into one email so you can reach out the same day.\n\n**Setup (10 min)**\n1. Apify account (free plan works). In **Detect tech stack** add an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Lead sheet headers: domain, cms, ecommerce, analytics, technologies, matchedTech, isFit, techCheckedAt.\n3. Pick that sheet in **Read leads** and **Update lead row**; connect Gmail in **Email new fits**.\n4. In **Settings**, list your target technologies and alert email.\n\n**Cost:** about $1.50 per 1,000 sites on Apify; unreachable sites are free; each run is capped at $2."
+      }
+    },
+    {
+      "id": "a40b845b-bfdf-4dc8-ac43-e6502f572a69",
+      "name": "Section: select",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        40
+      ],
+      "parameters": {
+        "width": 640,
+        "height": 300,
+        "content": "### 1. Pick unchecked leads\nOnly rows with an empty `techCheckedAt` are sent, so each domain is paid for once.",
+        "color": "5"
+      }
+    },
+    {
+      "id": "9629bea7-e848-4689-a7bc-3c3501cf8f89",
+      "name": "Section: enrich",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        740,
+        40
+      ],
+      "parameters": {
+        "width": 660,
+        "height": 300,
+        "content": "### 2. Detect and score\nOne Apify call for the whole batch, then a fit check against your target list.",
+        "color": "6"
+      }
+    },
+    {
+      "id": "f0667bce-4ab4-4920-9316-f2d2966121cb",
+      "name": "Section: act",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        -120
+      ],
+      "parameters": {
+        "width": 460,
+        "height": 560,
+        "content": "### 3. Save and alert\nEvery row is written back; only fits trigger the email.",
+        "color": "4"
+      }
+    },
+    {
+      "id": "be37be3e-e3ec-4093-94dc-5134589cab63",
+      "name": "Every weekday 9:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d64f0e70-3424-40c1-87dc-2fe707562e31",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        200
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"targetTechnologies\": [\"Shopify\", \"WooCommerce\"],\n  \"alertEmail\": \"you@example.com\",\n  \"maxDomainsPerRun\": 200\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "612f5b0b-7a18-42a7-977d-d9e4c950bf28",
+      "name": "Read leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        500,
+        200
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "7c1f1b00-77c4-45e7-ac88-36e22e47d594",
+      "name": "Not checked yet",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "63a8e067-51f9-4999-8b5a-85a683ef7ea8",
+              "leftValue": "={{ $json.techCheckedAt }}",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3ea743d8-4b35-4f19-84cd-214418ff3592",
+      "name": "Batch of domains",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const max = $('Settings').first().json.maxDomainsPerRun || 200;\nconst domains = [...new Set($input.all().map(i => String(i.json.domain || '').trim()).filter(Boolean))].slice(0, max);\nif (!domains.length) return [];\nreturn [{ json: { domains } }];"
+      }
+    },
+    {
+      "id": "1b425029-132f-43c3-80a8-2ca19bfe8909",
+      "name": "Detect tech stack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1060,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/uianalize~tech-stack-detector/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "maxTotalChargeUsd",
+              "value": "2"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ urls: $json.domains, includeFailed: true }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Apify API token"
+        }
+      }
+    },
+    {
+      "id": "eedf5b64-1767-4399-b338-eb9367d7a844",
+      "name": "Score fit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const targets = $('Settings').first().json.targetTechnologies.map(t => t.toLowerCase());\nconst now = new Date().toISOString();\nreturn $input.all().map(({ json: r }) => {\n  const names = (r.technologies || []).map(t => t.name);\n  const matched = names.filter(n => targets.includes(n.toLowerCase()));\n  const cat = (c) => (r.categories?.[c] || []).join(', ');\n  return { json: {\n    domain: r.input,\n    cms: cat('CMS'),\n    ecommerce: cat('E-commerce'),\n    analytics: cat('Analytics'),\n    technologies: names.join(', ') || (r.error ? 'error: ' + r.error : ''),\n    matchedTech: matched.join(', '),\n    isFit: matched.length > 0 ? 'yes' : 'no',\n    techCheckedAt: now,\n  } };\n});"
+      }
+    },
+    {
+      "id": "90dd8dd6-d5d2-4ac4-8671-7623e6473086",
+      "name": "Update lead row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1500,
+        100
+      ],
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "domain"
+          ],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "316d1a39-a288-47e2-9c67-a9450a35c4a4",
+      "name": "Only fits",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1500,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "be6b3d90-825c-4867-a38a-f45fe7a0dd68",
+              "leftValue": "={{ $json.isFit }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "yes"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ddbbb0b8-5598-45a3-871a-a1f829706424",
+      "name": "Build email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $input.all().map(i => i.json);\nif (!rows.length) return [];\nconst lines = rows.map(r => `- ${r.domain}: ${r.matchedTech}${r.cms ? ' (CMS: ' + r.cms + ')' : ''}`);\nreturn [{ json: {\n  to: $('Settings').first().json.alertEmail,\n  subject: `${rows.length} new lead(s) match your tech stack`,\n  body: `New leads that use your target technologies:\\n\\n${lines.join('\\n')}`,\n} }];"
+      }
+    },
+    {
+      "id": "0491227a-99cf-46b3-be5f-b836648b1089",
+      "name": "Email new fits",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1860,
+        320
+      ],
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every weekday 9:00": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Read leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read leads": {
+      "main": [
+        [
+          {
+            "node": "Not checked yet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not checked yet": {
+      "main": [
+        [
+          {
+            "node": "Batch of domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch of domains": {
+      "main": [
+        [
+          {
+            "node": "Detect tech stack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect tech stack": {
+      "main": [
+        [
+          {
+            "node": "Score fit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score fit": {
+      "main": [
+        [
+          {
+            "node": "Update lead row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Only fits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only fits": {
+      "main": [
+        [
+          {
+            "node": "Build email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build email": {
+      "main": [
+        [
+          {
+            "node": "Email new fits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
