@@ -1,29 +1,61 @@
 {
-  "name": "Weekly broken-link report to Google Sheets (Apify Broken Link Checker)",
+  "name": "Weekly broken-link report to Google Sheets with email alert (Apify)",
   "nodes": [
     {
-      "id": "4a78e42c-a894-43b1-ad36-d72820db470c",
-      "name": "Read me",
+      "id": "d1900e9c-8f65-4670-989d-63e6a9ccac62",
+      "name": "Overview",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -260,
-        -220
+        -420,
+        -260
       ],
       "parameters": {
-        "width": 480,
-        "height": 560,
-        "content": "## Weekly broken-link report to Google Sheets\n\n**Who it's for:** site owners, SEO consultants and agencies who want to catch 404s and dead links before visitors and search engines do.\n\n**How it works**\n1. Every Monday at 8:00 the schedule starts the run.\n2. **Run Broken Link Checker** crawls your site with the Broken Link Checker Actor on Apify (internal pages + external links) and returns the results.\n3. **Only broken links** keeps the broken-link rows and drops the per-site summary.\n4. **Append to Google Sheets** adds one row per broken link, so you get a weekly history.\n\n**Setup (5 min)**\n1. Apify account (free plan works). In **Run Broken Link Checker** create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Replace `example.com` in the request body with your site(s).\n3. In **Append to Google Sheets** connect Google and pick a sheet whose first row is: site, brokenUrl, statusCode, error, isExternal, foundOnPage, anchorText, checkedAt.\n\n**Customize:** change `maxPagesPerSite`, set `checkExternalLinks` to false, or swap Sheets for Slack/email.\n\n**Cost:** paid per page on Apify, about $1.50 per 1,000 pages; `maxTotalChargeUsd=2` caps each run at $2."
+        "width": 440,
+        "height": 720,
+        "content": "## Weekly broken-link report with email alert\n\n**Who it's for:** site owners, SEO consultants and agencies who want to catch 404s and dead links before visitors and search engines do.\n\n**How it works**\n1. Every Monday at 8:00 the workflow reads your settings (sites, page limit, alert email).\n2. It crawls each site with the Broken Link Checker Actor on Apify, checking internal pages and outbound links.\n3. Results are split: each broken link becomes a clean row appended to Google Sheets, building a weekly history.\n4. The per-site summaries are combined; if any broken links were found, you get one email with the totals per site and a link to the sheet. Clean weeks send nothing.\n\n**Setup (10 min)**\n1. Create a free Apify account. In **Crawl sites with Apify** add an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Edit **Settings**: your sites, `maxPagesPerSite`, alert email and sheet URL.\n3. In **Append broken links to sheet** connect Google Sheets and pick a sheet with headers: checkedAt, site, brokenUrl, statusCode, error, linkType, foundOnPage, anchorText.\n4. In **Email the weekly summary** connect Gmail (or swap for Slack/Outlook).\n\n**Cost:** Apify charges per page crawled, about $1.50 per 1,000 pages; `maxTotalChargeUsd=2` caps each run at $2."
       }
     },
     {
-      "id": "cac13430-0be0-42de-8ee2-9eabae971fb7",
+      "id": "5d244447-b576-41d0-81ca-ea65a4f63bc1",
+      "name": "Section: crawl",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        0
+      ],
+      "parameters": {
+        "width": 520,
+        "height": 380,
+        "content": "### 1. Settings and crawl\nOne place to change sites and limits. The HTTP node calls Apify's run-sync endpoint, so the whole crawl happens in one request (up to 5 min).",
+        "color": "5"
+      }
+    },
+    {
+      "id": "01593b97-472e-4616-abb9-521ea6ce9638",
+      "name": "Section: report",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        740,
+        -120
+      ],
+      "parameters": {
+        "width": 560,
+        "height": 560,
+        "content": "### 2. Log and alert\nTop branch: one row per broken link in Google Sheets.\nBottom branch: totals per site, then an email only when something is broken.",
+        "color": "6"
+      }
+    },
+    {
+      "id": "be112aa2-98a4-4736-893e-69cf63f9b45b",
       "name": "Every Monday 8:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
         0,
-        160
+        200
       ],
       "parameters": {
         "rule": {
@@ -41,13 +73,28 @@
       }
     },
     {
+      "id": "605cf75d-f611-449a-b3a1-92f104ef87a0",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"sites\": [\"example.com\"],\n  \"maxPagesPerSite\": 100,\n  \"checkExternalLinks\": true,\n  \"alertEmail\": \"you@example.com\",\n  \"sheetUrl\": \"https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID\"\n}",
+        "options": {}
+      }
+    },
+    {
       "id": "d37a31dd-e674-40f0-9fc8-cf6ff4af51d9",
-      "name": "Run Broken Link Checker",
+      "name": "Crawl sites with Apify",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        220,
-        160
+        440,
+        200
       ],
       "parameters": {
         "method": "POST",
@@ -65,7 +112,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"startUrls\": [\"example.com\"],\n  \"maxPagesPerSite\": 100,\n  \"checkExternalLinks\": true\n}",
+        "jsonBody": "={{ JSON.stringify({ startUrls: $json.sites, maxPagesPerSite: $json.maxPagesPerSite, checkExternalLinks: $json.checkExternalLinks }) }}",
         "options": {
           "timeout": 300000
         }
@@ -78,46 +125,144 @@
       }
     },
     {
-      "id": "82a58ee5-53d4-442e-94b0-18cd67720c87",
-      "name": "Only broken links",
-      "type": "n8n-nodes-base.filter",
-      "typeVersion": 2.2,
+      "id": "74e1fa6b-1d24-47b9-afb1-ddfbe73873bd",
+      "name": "Broken link or summary?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
       "position": [
-        440,
-        160
+        660,
+        200
       ],
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
+        "rules": {
+          "values": [
             {
-              "id": "c54025e9-35df-4154-b5ed-075ff3c2cfb3",
-              "leftValue": "={{ $json.type }}",
-              "rightValue": "broken-link",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "915ee578-3264-4db9-8aaa-fd3a3a1d45c3",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "broken-link",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Broken link"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "17c1d659-77fe-470c-8a50-1f14ff287484",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "site-summary",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Site summary"
             }
-          ],
-          "combinator": "and"
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "508aef18-c5c2-4d65-b419-6bdaf76ecd34",
+      "name": "Format sheet row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        100
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "228344fe-4fb1-4abe-b230-ed96a3b089f5",
+              "name": "checkedAt",
+              "value": "={{ $json.checkedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "04225e1f-9f31-43c2-84ae-890aaffbd355",
+              "name": "site",
+              "value": "={{ $json.site }}",
+              "type": "string"
+            },
+            {
+              "id": "3d7cbd45-1b55-4456-8324-b434fd800b4b",
+              "name": "brokenUrl",
+              "value": "={{ $json.brokenUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "10def7a7-1f44-4788-89b2-2b987c547df1",
+              "name": "statusCode",
+              "value": "={{ $json.statusCode ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ac8d7462-eb1e-4022-993b-1913895f26af",
+              "name": "error",
+              "value": "={{ $json.error || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "d4ea1e7a-1473-4881-8f20-45fcc5f8d56d",
+              "name": "linkType",
+              "value": "={{ $json.isExternal ? 'external' : 'internal' }}",
+              "type": "string"
+            },
+            {
+              "id": "a673541c-19c9-4465-b923-4619276b26d4",
+              "name": "foundOnPage",
+              "value": "={{ $json.foundOnPage }}",
+              "type": "string"
+            },
+            {
+              "id": "33b9190a-74c8-4639-aa66-7882361109e4",
+              "name": "anchorText",
+              "value": "={{ $json.anchorText || '' }}",
+              "type": "string"
+            }
+          ]
         },
         "options": {}
       }
     },
     {
       "id": "420bf4b4-0c07-4e3d-80cd-9b706c041ac6",
-      "name": "Append to Google Sheets",
+      "name": "Append broken links to sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
-        660,
-        160
+        1100,
+        100
       ],
       "parameters": {
         "operation": "append",
@@ -139,6 +284,79 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "6ed2f2de-34fa-40bd-836c-0ad5aea7fecc",
+      "name": "Build summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const settings = $('Settings').first().json;\nconst sites = $input.all().map(i => i.json);\nconst total = sites.reduce((n, s) => n + (s.brokenLinks || 0), 0);\nconst lines = sites.map(s => `- ${s.site}: ${s.brokenLinks || 0} broken of ${s.linksChecked || 0} links on ${s.pagesCrawled || 0} pages${s.error ? ' (error: ' + s.error + ')' : ''}`);\nreturn [{ json: {\n  total,\n  to: settings.alertEmail,\n  subject: `Broken links: ${total} found this week`,\n  body: `Weekly broken-link check\\n\\n${lines.join('\\n')}\\n\\nDetails: ${settings.sheetUrl}`\n} }];"
+      }
+    },
+    {
+      "id": "f7c304d2-5a6e-48be-bc81-1d25d6a29b0f",
+      "name": "Any broken links?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f808d584-0d41-4cb0-a9bd-7e07df4782fa",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "85e95f6b-f3ce-4959-b0e1-62a48c57dbb6",
+      "name": "Email the weekly summary",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1320,
+        300
+      ],
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
+      }
     }
   ],
   "connections": {
@@ -146,29 +364,80 @@
       "main": [
         [
           {
-            "node": "Run Broken Link Checker",
+            "node": "Settings",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Run Broken Link Checker": {
+    "Settings": {
       "main": [
         [
           {
-            "node": "Only broken links",
+            "node": "Crawl sites with Apify",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Only broken links": {
+    "Crawl sites with Apify": {
       "main": [
         [
           {
-            "node": "Append to Google Sheets",
+            "node": "Broken link or summary?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Broken link or summary?": {
+      "main": [
+        [
+          {
+            "node": "Format sheet row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format sheet row": {
+      "main": [
+        [
+          {
+            "node": "Append broken links to sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build summary": {
+      "main": [
+        [
+          {
+            "node": "Any broken links?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any broken links?": {
+      "main": [
+        [
+          {
+            "node": "Email the weekly summary",
             "type": "main",
             "index": 0
           }
