@@ -1,29 +1,77 @@
 {
-  "name": "Domain expiry watch (Webstack Data)",
+  "name": "Domain portfolio expiry tracker with Google Sheets and email alerts (Apify)",
   "nodes": [
     {
-      "id": "9be882f8-8936-443a-82ab-7291097b5ebf",
-      "name": "Read me",
+      "id": "6e174b87-a8f8-43df-b027-a14b9fd3b056",
+      "name": "Overview",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -60,
-        -60
+        -460,
+        -300
       ],
       "parameters": {
-        "width": 440,
-        "height": 320,
-        "content": "## Domain expiry watch\nEvery Monday this workflow checks your domains with the **Domain Availability Checker** Actor on Apify (official RDAP/WHOIS registry data) and emails you the ones that expire within 45 days, or that are no longer registered.\n\n**Setup (5 min)**\n1. Create an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Put your domains in the JSON body of *Check domains*.\n3. Connect Gmail and set your address in *Email me*.\n\n**Cost:** $0.0015 per domain checked. 20 domains every week is about $0.13 per month."
+        "width": 460,
+        "height": 740,
+        "content": "## Domain portfolio expiry tracker (Google Sheets + email)\n\n**Who it's for:** agencies, IT admins and domain investors who manage many domains for themselves or clients and cannot afford a forgotten renewal.\n\n**How it works**\n1. Every Monday at 8:00 the workflow reads the domain list from your Google Sheet.\n2. All domains go in one call to the Domain Availability Checker Actor on Apify, which reads official RDAP/WHOIS registry data (registrar, expiry date, status).\n3. A Code node calculates days left and labels each domain `ok`, `renew soon`, `expired` or `not registered`.\n4. The sheet is updated, so it always shows the current registrar, expiry date and status.\n5. Domains that need attention are grouped into one email. Weeks with nothing to do send nothing.\n\n**Setup (10 min)**\n1. Apify account (free plan works). In **Check domains on Apify** add an *HTTP Header Auth* credential: name `Authorization`, value `Bearer YOUR_APIFY_TOKEN`.\n2. Sheet headers: domain, status, registrar, expiresAt, daysLeft, lastChecked. Pick it in **Read domains** and **Update domain row**.\n3. In **Settings**, set `warnDays` and your alert email; connect Gmail.\n\n**Note:** some ccTLDs (e.g. .es, .ch) do not publish expiry dates; they are reported without a date.\n\n**Cost:** $0.0015 per domain checked on Apify; 50 domains every week is about $0.30 per month."
       }
     },
     {
-      "id": "69cefc31-653e-45bb-85de-1634f5e614a0",
-      "name": "Every Monday",
+      "id": "3402cee7-b8f3-47ff-a58c-2e6f228b044d",
+      "name": "Section: read",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        40
+      ],
+      "parameters": {
+        "width": 640,
+        "height": 300,
+        "content": "### 1. Read and check\nOne Apify call for the whole list, capped at $1 per run.",
+        "color": "5"
+      }
+    },
+    {
+      "id": "12d4979c-9e9a-4e03-96fd-4c7aac3e7830",
+      "name": "Section: label",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        740,
+        40
+      ],
+      "parameters": {
+        "width": 660,
+        "height": 300,
+        "content": "### 2. Label and save\nDays left are calculated in n8n, then every row is written back to the sheet.",
+        "color": "6"
+      }
+    },
+    {
+      "id": "ea126e5e-a2c0-4914-bff8-9e44cea60eb7",
+      "name": "Section: alert",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        -120
+      ],
+      "parameters": {
+        "width": 460,
+        "height": 560,
+        "content": "### 3. Alert\nOnly domains that are expiring, expired or no longer registered reach your inbox.",
+        "color": "4"
+      }
+    },
+    {
+      "id": "b5ba7145-1b97-4177-8860-c9b31cf6eacb",
+      "name": "Every Monday 8:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        0,
-        300
+        100,
+        200
       ],
       "parameters": {
         "rule": {
@@ -41,13 +89,66 @@
       }
     },
     {
-      "id": "85901a5f-46da-41d7-9864-3c329d585fe5",
-      "name": "Check domains",
+      "id": "a30acd12-cf72-4c53-852d-6e8211599d22",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        200
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"warnDays\": 45,\n  \"alertEmail\": \"you@example.com\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "38bc5212-428a-43dc-a044-222c90c00055",
+      "name": "Read domains",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        500,
+        200
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "1b971e3c-049d-488a-88bb-6dec3cf9b19d",
+      "name": "Collect domains",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const domains = [...new Set($input.all().map(i => String(i.json.domain || '').trim().toLowerCase()).filter(Boolean))];\nif (!domains.length) return [];\nreturn [{ json: { domains } }];"
+      }
+    },
+    {
+      "id": "5eed3051-6557-4ed2-b7c5-c1bdf2b78aa7",
+      "name": "Check domains on Apify",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        240,
-        300
+        1060,
+        200
       ],
       "parameters": {
         "method": "POST",
@@ -65,7 +166,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"domains\": [\"example.com\", \"example.org\"]\n}",
+        "jsonBody": "={{ JSON.stringify({ domains: $json.domains }) }}",
         "options": {
           "timeout": 300000
         }
@@ -78,13 +179,60 @@
       }
     },
     {
-      "id": "a5b415ed-a8d2-45df-913a-5febf5ebd752",
-      "name": "Expiring or lost",
+      "id": "6ff61cab-2239-4475-a8ab-72ea676d2fe0",
+      "name": "Label each domain",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const warn = $('Settings').first().json.warnDays || 45;\nconst today = new Date().toISOString().slice(0, 10);\nreturn $input.all().map(({ json: d }) => {\n  const days = d.expiresAt ? Math.floor((new Date(d.expiresAt) - Date.now()) / 86400000) : null;\n  let status = 'ok';\n  if (d.status === 'available') status = 'not registered';\n  else if (d.status === 'likely-available') status = 'probably not registered';\n  else if (d.status === 'unknown') status = 'unknown';\n  else if (days !== null && days < 0) status = 'expired';\n  else if (days !== null && days <= warn) status = 'renew soon';\n  return { json: {\n    domain: d.domain,\n    status,\n    registrar: d.registrar || '',\n    expiresAt: d.expiresAt ? String(d.expiresAt).slice(0, 10) : '',\n    daysLeft: days ?? '',\n    lastChecked: today,\n  } };\n});"
+      }
+    },
+    {
+      "id": "85b1ed71-0c59-447c-8063-f7944440358f",
+      "name": "Update domain row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1500,
+        100
+      ],
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "domain"
+          ],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "14b53abf-3ee4-4b6a-a258-9d38bc77feef",
+      "name": "Needs attention",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        480,
-        300
+        1500,
+        320
       ],
       "parameters": {
         "conditions": {
@@ -96,85 +244,143 @@
           },
           "conditions": [
             {
-              "id": "a1",
-              "leftValue": "={{ $json.daysUntilExpiry ?? 9999 }}",
-              "rightValue": 45,
+              "id": "0c892b57-4652-426e-b972-d7a2a31b696b",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
               "operator": {
-                "type": "number",
-                "operation": "lt"
+                "type": "string",
+                "operation": "notEquals"
               }
             },
             {
-              "id": "a2",
+              "id": "82d12b53-08a0-470e-8b34-2d89ccf6f5ba",
               "leftValue": "={{ $json.status }}",
-              "rightValue": "available",
+              "rightValue": "unknown",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             }
           ],
-          "combinator": "or"
+          "combinator": "and"
         },
         "options": {}
       }
     },
     {
-      "id": "c1",
+      "id": "0c05948d-a5fc-4984-8a00-88ba2b5d9b5e",
       "name": "Build email",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        720,
-        300
+        1680,
+        320
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const lines = $input.all().map(i => i.json.status === 'available'\n  ? `${i.json.domain}: NOT REGISTERED any more (status available)`\n  : `${i.json.domain}: expires ${i.json.expiresAt} (${i.json.daysUntilExpiry} days), registrar ${i.json.registrar || 'unknown'}`);\nreturn [{ json: { subject: `${lines.length} domain(s) need attention`, body: lines.join('\\n') } }];"
+        "language": "javaScript",
+        "jsCode": "const rows = $input.all().map(i => i.json).sort((a, b) => (a.daysLeft === '' ? 1e9 : a.daysLeft) - (b.daysLeft === '' ? 1e9 : b.daysLeft));\nif (!rows.length) return [];\nconst lines = rows.map(r => r.status.endsWith('not registered')\n  ? `- ${r.domain}: ${r.status.toUpperCase()}`\n  : `- ${r.domain}: ${r.status}, expires ${r.expiresAt} (${r.daysLeft} days), registrar ${r.registrar || 'unknown'}`);\nreturn [{ json: {\n  to: $('Settings').first().json.alertEmail,\n  subject: `${rows.length} domain(s) need attention`,\n  body: `Domain expiry check:\\n\\n${lines.join('\\n')}`,\n} }];"
       }
     },
     {
-      "id": "m1",
-      "name": "Email me",
+      "id": "d9937528-c342-4572-80dd-6b3d86a97588",
+      "name": "Email the alert",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        960,
-        300
+        1860,
+        320
       ],
       "parameters": {
-        "sendTo": "you@example.com",
+        "sendTo": "={{ $json.to }}",
         "subject": "={{ $json.subject }}",
         "emailType": "text",
         "message": "={{ $json.body }}",
-        "options": {}
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail account"
+        }
       }
     }
   ],
   "connections": {
-    "Every Monday": {
+    "Every Monday 8:00": {
       "main": [
         [
           {
-            "node": "Check domains",
+            "node": "Settings",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check domains": {
+    "Settings": {
       "main": [
         [
           {
-            "node": "Expiring or lost",
+            "node": "Read domains",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Expiring or lost": {
+    "Read domains": {
+      "main": [
+        [
+          {
+            "node": "Collect domains",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect domains": {
+      "main": [
+        [
+          {
+            "node": "Check domains on Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check domains on Apify": {
+      "main": [
+        [
+          {
+            "node": "Label each domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label each domain": {
+      "main": [
+        [
+          {
+            "node": "Update domain row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Needs attention",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs attention": {
       "main": [
         [
           {
@@ -189,7 +395,7 @@
       "main": [
         [
           {
-            "node": "Email me",
+            "node": "Email the alert",
             "type": "main",
             "index": 0
           }
